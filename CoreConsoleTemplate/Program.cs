@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using CoreConsoleTemplate.Bussines;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -20,10 +21,11 @@ namespace CoreConsoleTemplate
             var host = Host.CreateDefaultBuilder().ConfigureServices((context, services) =>
             {
                 services.AddScoped<IDataAccess, DataAccess>();
+                services.AddSingleton<ISendRequest, SendRequest>();
             }).UseSerilog().Build();
 
             var _main = ActivatorUtilities.CreateInstance<Main>(host.Services);
-            _main.Run();
+            _main.Run().Wait();
         }
 
         static void BuildConfig(IConfigurationBuilder builder)
