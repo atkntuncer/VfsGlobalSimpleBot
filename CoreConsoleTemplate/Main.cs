@@ -26,7 +26,7 @@ namespace CoreConsoleTemplate
             var result = await _sendRequest.CheckAppointment();
             if (result)
             {
-                //send sms
+                int a = 1;
             }
         }
     }

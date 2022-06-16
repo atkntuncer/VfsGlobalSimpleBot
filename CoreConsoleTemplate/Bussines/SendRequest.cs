@@ -16,39 +16,62 @@ namespace CoreConsoleTemplate.Bussines
         public async Task<bool> CheckAppointment()
         {
             int count = 0;
+            int randomSleepNumber = 0;
+            int retryCount = 0;
             Browser browser = await OpenBrowser();
-
-            bool result = await GetContent(browser);
-
-            while (!result)
+            bool result = await GetContent(browser, count);
+            while (retryCount != 3)
             {
-                count++;
-                Console.WriteLine(count);
-                await File.WriteAllTextAsync(@"C:\Users\Atakan\Documents\IP-rate limits.txt", count.ToString() + Environment.NewLine);
-                Thread.Sleep(5 *60 * 1000);
-                result = await GetContent(browser);
-                Thread.Sleep(10000);
+                try
+                {
+                    while (!result)
+                    {
+                        count++;
+                        Console.WriteLine(count);
+                        await File.WriteAllTextAsync(@"C:\Users\Atakan\Documents\IP-rate limits.txt", count.ToString() + Environment.NewLine);
+                        var rng = new Random();
+                        randomSleepNumber = rng.Next(13000, 15000);
+                        Thread.Sleep(randomSleepNumber * 60);
+                        result = await GetContent(browser, count);
+                        Thread.Sleep(10000);
+                    }
+                }
+                catch (Exception)
+                {
+                    retryCount++;
+                    if (retryCount == 3)
+                    {
+                        // send error sms
+                    }
+                   var pages=  browser.PagesAsync().Result;
+                    pages[1].CloseAsync().Wait();
+                    Thread.Sleep(60 * 1000);
+                }
             }
-            return true;
+
+            return result;
         }
 
         private async Task<Browser> OpenBrowser()
         {
+            string[] args ={/*"--disable-web-security",*/
+       "--disable-features=BlockInsecurePrivateNetworkRequests"
+       /*"--disable-site-isolation-trials" */};
             Browser browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 IgnoreHTTPSErrors = true,
                 Headless = false,
                 Timeout = 0,
                 ExecutablePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-                SlowMo = 10
+                SlowMo = 10,
+                Args = args
             });
 
             return browser;
         }
 
-        private async Task<bool> GetContent(Browser browser)
+        private async Task<bool> GetContent(Browser browser, int count)
         {
-            // Create a new page and go to Bing Maps
             Page page = await browser.NewPageAsync();
             //await page.SetUserAgentAsync("Chrome/73.0.3683.75");
             await page.GoToAsync("https://visa.vfsglobal.com/tur/tr/pol/login");
@@ -57,8 +80,20 @@ namespace CoreConsoleTemplate.Bussines
             await page.SetCacheEnabledAsync(false);
 
             await page.WaitForSelectorAsync("input[formcontrolname='username']");
-            await page.TypeAsync("input[formcontrolname='username']", "****@hotmail.com");
-            await page.TypeAsync("input[formcontrolname='password']", "****");
+            if (count == 0)
+            {
+                await page.ClickAsync("button[id='onetrust-reject-all-handler']");
+
+            }
+            if (count % 2 == 0)
+            {
+                await page.TypeAsync("input[formcontrolname='username']", "vfstest@hotmail.com");
+            }
+            else
+            {
+                await page.TypeAsync("input[formcontrolname='username']", "testvfs@hotmail.com");
+            }
+            await page.TypeAsync("input[formcontrolname='password']", "Test1234!");
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Enter");
@@ -87,7 +122,7 @@ namespace CoreConsoleTemplate.Bussines
             var parser = new HtmlParser();
             var document = await parser.ParseDocumentAsync(content);
             var result = document.QuerySelector(".alert.alert-info.border-0.rounded-0").InnerHtml;
-            if (result.Contains("bulunmamaktadır"))
+            if (!result.Contains("En erken"))
             {
                 await page.CloseAsync();
                 return false;
