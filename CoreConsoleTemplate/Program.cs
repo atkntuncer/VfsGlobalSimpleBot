@@ -1,4 +1,5 @@
 ﻿using CoreConsoleTemplate.Bussines;
+using CoreConsoleTemplate.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,6 +23,7 @@ namespace CoreConsoleTemplate
             {
                 services.AddScoped<IDataAccess, DataAccess>();
                 services.AddSingleton<ISendRequest, SendRequest>();
+                services.Configure<Configuration>(context.Configuration.GetSection("BotSetttings"));
             }).UseSerilog().Build();
 
             var _main = ActivatorUtilities.CreateInstance<Main>(host.Services);
