@@ -23,35 +23,31 @@ namespace CoreConsoleTemplate.Bussines
         {
             _config = config.Value;
         }
-        public async Task<bool> CheckAppointment()
+        public async Task CheckAppointment()
         {
             int count = 0;
             int randomSleepNumber = 0;
-            int retryCount = 0;
-            bool result = false;
 
             var bot = new TelegramBotClient("5529977162:AAFIytAOZczhzRhiMFCAv3Vm0jh5_yumObs");
-            Browser browser = await OpenBrowser();
             while (true)
             {
+                var rng = new Random();
+                randomSleepNumber = rng.Next(12250, 14250);
+
+                Browser browser = await OpenBrowser();
                 try
                 {
-                    result = await GetContent(browser, count, bot);
                     count++;
-                    var rng = new Random();
-                    randomSleepNumber = rng.Next(12250, 14250);
+                    await GetContent(browser, count, bot);
                     Thread.Sleep(randomSleepNumber * 60);
                 }
                 catch (Exception ex)
                 {
-                    retryCount++;
-                    await bot.SendTextMessageAsync("-612527851", $"Id: {_config.Id} - Hata alındı deneme : {retryCount} -- {ex.Message}");
-                    var pages = browser.PagesAsync().Result;
-                    pages[0].CloseAsync().Wait();
-                    Thread.Sleep(60 * 1000 * 13);
+                    await bot.SendTextMessageAsync("-612527851", $"Id: {_config.Id} - Hata alındı! -- {ex.Message}");
+                    await browser.CloseAsync();
+                    Thread.Sleep(60 * randomSleepNumber);
                 }
             }
-            return result;
         }
 
         private async Task<Browser> OpenBrowser()
@@ -64,7 +60,7 @@ namespace CoreConsoleTemplate.Bussines
                 IgnoreHTTPSErrors = true,
                 Headless = false,
                 Timeout = 0,
-                ExecutablePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+                ExecutablePath = _config.BrowserExe,
                 SlowMo = 10,
                 Args = args
             });
@@ -77,16 +73,15 @@ namespace CoreConsoleTemplate.Bussines
             Page page = await browser.NewPageAsync();
             //await page.SetUserAgentAsync("Chrome/73.0.3683.75");
             await page.GoToAsync("https://visa.vfsglobal.com/tur/tr/pol/login");
-            Thread.Sleep(7000);
+            Thread.Sleep(7000 * _config.Multiplier);
 
             await page.SetCacheEnabledAsync(false);
 
             await page.WaitForSelectorAsync("input[formcontrolname='username']");
-            if (count == 0)
-            {
-                await page.ClickAsync("button[id='onetrust-reject-all-handler']");
 
-            }
+            await page.WaitForSelectorAsync("button[id='onetrust-reject-all-handler']");
+            await page.ClickAsync("button[id='onetrust-reject-all-handler']");
+
             if (count % 2 == 0)
             {
                 await page.TypeAsync("input[formcontrolname='username']", $"{_config.FirstMail}");
@@ -99,38 +94,47 @@ namespace CoreConsoleTemplate.Bussines
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Enter");
-            Thread.Sleep(7000);
+            Thread.Sleep(7000 * _config.Multiplier);
 
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Enter");
-            Thread.Sleep(4000);
+            Thread.Sleep(4000 * _config.Multiplier);
 
             await page.ClickAsync("mat-select[id='mat-select-0']");
-            Thread.Sleep(2000);
+            Thread.Sleep(500 * _config.Multiplier);
             await page.ClickAsync("mat-option[id=mat-option-2]");
-            Thread.Sleep(4000);
+            Thread.Sleep(4000 * _config.Multiplier);
 
             await page.ClickAsync("mat-select[id='mat-select-2']");
-            Thread.Sleep(2000);
+            Thread.Sleep(500 * _config.Multiplier);
             await page.ClickAsync("mat-option[id=mat-option-6]");
-            Thread.Sleep(4000);
+            Thread.Sleep(4000 * _config.Multiplier);
 
             await page.ClickAsync("mat-select[id='mat-select-4']");
-            Thread.Sleep(2000);
+            Thread.Sleep(500 * _config.Multiplier);
             await page.ClickAsync("mat-option[id=mat-option-9]");
-            Thread.Sleep(5000);
+            Thread.Sleep(5000 * _config.Multiplier);
 
             var content = await page.GetContentAsync();
             var parser = new HtmlParser();
             var document = await parser.ParseDocumentAsync(content);
             var result = document.QuerySelector(".alert.alert-info.border-0.rounded-0").InnerHtml;
+
+            await page.WaitForSelectorAsync(".alert.alert-info.border-0.rounded-0");
+
+            if (!result.Contains("erken") && !result.Contains("bulunmamaktadır"))
+            {
+                throw new Exception("Sonuç alınamadı");
+            }
+
             if (!result.Contains("erken"))
             {
-                await page.CloseAsync();
+                await browser.CloseAsync();
                 return false;
             }
+
             await bot.SendTextMessageAsync("-612527851", "Id: {_config.Id} -" + result);
-            await page.CloseAsync();
+            await browser.CloseAsync();
             return true;
         }
     }

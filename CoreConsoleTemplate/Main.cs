@@ -23,11 +23,7 @@ namespace CoreConsoleTemplate
         }
         public async Task Run()
         {
-            var result = await _sendRequest.CheckAppointment();
-            if (result)
-            {
-                int a = 1;
-            }
+            await _sendRequest.CheckAppointment();
         }
     }
 }

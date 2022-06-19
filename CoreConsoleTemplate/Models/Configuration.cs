@@ -12,6 +12,7 @@ namespace CoreConsoleTemplate.Models
         public string? FirstMail { get; set; }
         public string? SecondMail { get; set; }
         public string? Password { get; set; }
-
+        public string? BrowserExe { get; set; }
+        public int Multiplier { get; set; }
     }
 }

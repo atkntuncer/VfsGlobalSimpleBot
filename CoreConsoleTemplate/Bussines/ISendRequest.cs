@@ -4,6 +4,6 @@ namespace CoreConsoleTemplate.Bussines
 {
     public interface ISendRequest
     {
-        Task<bool> CheckAppointment();
+        Task CheckAppointment();
     }
 }
