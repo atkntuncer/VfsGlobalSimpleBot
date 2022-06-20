@@ -94,7 +94,7 @@ namespace CoreConsoleTemplate.Bussines
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Enter");
-            Thread.Sleep(7000 * _config.Multiplier);
+            Thread.Sleep(10000 * _config.Multiplier);
 
             await page.Keyboard.PressAsync("Tab");
             await page.Keyboard.PressAsync("Enter");
@@ -133,7 +133,7 @@ namespace CoreConsoleTemplate.Bussines
                 return false;
             }
 
-            await bot.SendTextMessageAsync("-612527851", "Id: {_config.Id} -" + result);
+            await bot.SendTextMessageAsync("-612527851", $"Id: {_config.Id} -" + result);
             await browser.CloseAsync();
             return true;
         }
